@@ -1,8 +1,7 @@
 <footer>
-    <div class="site-footer">
-        <p>&copy; <?php echo date('Y'); ?> <?php bloginfo('name'); ?>. All rights reserved.</p>
-    </div>
-</footer>
-<?php wp_footer(); ?>
+    <p>&copy; <?php echo date('Y'); ?> TikTok Custom Theme</p>
+    <?php wp_nav_menu(['theme_location' => 'footer_menu']); ?>
+  </footer>
+  <?php wp_footer(); ?>
 </body>
 </html>
