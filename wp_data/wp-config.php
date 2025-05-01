@@ -113,7 +113,7 @@ $table_prefix = getenv_docker('WORDPRESS_TABLE_PREFIX', 'wp_');
  *
  * @link https://developer.wordpress.org/advanced-administration/debug/debug-wordpress/
  */
-define( 'WP_DEBUG', !!getenv_docker('WORDPRESS_DEBUG', '') );
+// define( 'WP_DEBUG', !!getenv_docker('WORDPRESS_DEBUG', '') );
 
 /* Add any custom values between this line and the "stop editing" line. */
 
@@ -128,6 +128,21 @@ if ($configExtra = getenv_docker('WORDPRESS_CONFIG_EXTRA', '')) {
 	eval($configExtra);
 }
 
+
+define('TIKTOK_SHOP_ID', '7496169812939344750');
+define('TIKTOK_SHOP_CIPHER', 'ROW_D5k-pAAAAAC1xzOL8eNCz97fnDk2_pri');
+define('TIKTOK_ACCESS_TOKEN', 'ROW_zkEuHwAAAAA1RW7pUGCuxeLtWOMsFNHBL3MrBMB-DH2Qx7XtP9j5KVVCepHkyVYu482sK-dtCEIqxWhzAl-f9ggL7BcXnuhIwj_CbIMRUjMwZODaievLRg');
+define('TIKTOK_APP_KEY', '6g227phmobr8k');
+define('TIKTOK_APP_SECRET', 'bec98c8b3dc27bd3dae42ae4fa2357198d105cef');
+
+
+define( 'WP_DEBUG', true );
+define( 'WP_DEBUG_LOG', true ); // Ghi lỗi vào file debug.log trong thư mục wp-content
+define( 'WP_DEBUG_DISPLAY', false ); // Ẩn lỗi trên frontend (nên dùng false trên site production)
+@ini_set( 'display_errors', 0 ); // Ẩn lỗi PHP
+// define('WP_DEBUG_DISPLAY', false); // ẩn lỗi khỏi trình duyệt, chỉ ghi log
+
+
 /* That's all, stop editing! Happy publishing. */
 
 /** Absolute path to the WordPress directory. */
@@ -137,5 +152,3 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /** Sets up WordPress vars and included files. */
 require_once ABSPATH . 'wp-settings.php';
-
-define('DISALLOW_FILE_EDIT', false);
