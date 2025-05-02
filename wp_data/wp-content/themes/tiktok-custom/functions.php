@@ -39,7 +39,7 @@ add_action('load-edit.php', function () {
     }
 });
 
-// custom order list
+// custom order list start
 add_filter('pre_comment_approved', function ($approved, $commentdata) {
     return 1; // 1 = approved
 }, 10, 2);
@@ -188,6 +188,9 @@ add_action('wp_ajax_mark_order_complete', function () {
     wp_send_json_success(['message' => 'Status updated to Completed']);
 });
 
+// custom order list end
+
+
 // fix comment form upload
 add_action('wp_footer', function () {
     if (!is_singular())
@@ -210,3 +213,135 @@ add_action('wp_footer', function () {
     </script>
     <?php
 });
+
+// custom filter post with role
+add_action('pre_get_posts', function ($query) {
+    if (
+        is_admin() &&
+        $query->is_main_query() &&
+        $query->get('post_type') === 'notification' &&
+        !current_user_can('administrator')
+    ) {
+        $user_id = get_current_user_id();
+
+        $query->set('meta_query', [
+            [
+                'key' => 'user_id',
+                'value' => $user_id,
+                'compare' => '=',
+            ]
+        ]);
+    }
+
+    if (
+        is_admin() &&
+        $query->is_main_query() &&
+        $query->get('post_type') === 'tiktok_order' &&
+        current_user_can('designer')
+    ) {
+        $user_id = get_current_user_id();
+
+        $query->set('meta_query', [
+            [
+                'key' => 'designer',
+                'value' => $user_id,
+                'compare' => '=',
+            ]
+        ]);
+    }
+});
+
+
+// send notification
+add_action('comment_post', function ($comment_id, $approved) {
+    if (!$approved)
+        return;
+
+    $comment = get_comment($comment_id);
+    $user = get_userdata($comment->user_id);
+    if (!$user)
+        return;
+
+    $roles = (array) $user->roles;
+    $post_id = $comment->comment_post_ID;
+    $author_name = $user->display_name;
+
+    // Nếu là designer → gửi tới seller
+    if (in_array('designer', $roles)) {
+        $sellers = get_users(['role' => 'seller']);
+        foreach ($sellers as $seller) {
+            create_notification(
+                $seller->ID,
+                'New Comment from ' . $author_name,
+                $author_name . ' commented on order #' . get_the_title($post_id),
+                'comment',
+                $post_id,
+                $comment_id
+            );
+        }
+    }
+
+    if (in_array('seller', $roles) || in_array('manager', $roles)) {
+        $designer_id = get_post_meta($post_id, 'designer', true);
+        if ($designer_id) {
+            create_notification(
+                $designer_id,
+                'New Comment from ' . $author_name,
+                $author_name . ' replied on order #' . get_the_title($post_id),
+                'comment',
+                $post_id,
+                $comment_id
+            );
+        }
+    }
+
+}, 10, 2);
+
+add_filter('map_meta_cap', function ($caps, $cap, $user_id, $args) {
+    if ($cap === 'edit_comment') {
+        $comment_id = $args[0] ?? 0;
+        $comment = get_comment($comment_id);
+
+        if (!$comment) return $caps;
+
+        // Nếu user không phải là tác giả của comment → từ chối
+        if ((int) $comment->user_id !== (int) $user_id) {
+            return ['do_not_allow'];
+        }
+    }
+
+    return $caps;
+}, 10, 4);
+
+add_filter('manage_notification_posts_columns', function ($columns) {
+    $columns['view_link'] = 'View';
+    return $columns;
+});
+
+add_action('manage_notification_posts_custom_column', function ($column, $post_id) {
+    if ($column === 'view_link') {
+        $related_post_id = get_post_meta($post_id, 'related_post', true);
+        $comment_id = get_post_meta($post_id, 'comment_id', true);
+
+        if ($related_post_id) {
+            $link = get_permalink($related_post_id);
+            if ($comment_id) {
+                $link .= '#comment-' . $comment_id;
+            }
+
+            echo '<a href="' . esc_url($link) . '" 
+            style="
+            display: inline-block;
+            padding: 4px 10px;
+            background-color: #28a745;
+            color: #fff;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 13px;
+            "
+            class="button button-small">View</a>';
+        } else {
+            echo '—';
+        }
+    }
+}, 10, 2);

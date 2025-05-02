@@ -11,41 +11,6 @@ piklist('field', ['type' => 'text', 'field' => 'shop_code', 'label' => 'Shop Cod
 piklist('field', ['type' => 'textarea', 'field' => 'order_notice', 'label' => 'Order Notice', 'columns' => 6]);
 piklist('field', ['type' => 'text', 'field' => 'customer_name', 'label' => 'Customer Name', 'columns' => 6]);
 
-// piklist('field', [
-//     'type' => 'group',
-//     'field' => 'design_group',
-//     'label' => 'Design',
-//     'add_more' => true,
-//     'fields' => [
-//         ['type' => 'url', 'field' => 'design_link', 'label' => 'Design Link', 'columns' => 6],
-//         [
-//             'type' => 'select',
-//             'field' => 'status',
-//             'label' => 'Status',
-//             'columns' => 6,
-//             'choices' => [
-//                 'waiting' => 'Waiting for design',
-//                 'revising' => 'Revising design',
-//                 'done' => 'Design completed'
-//             ]
-//         ],
-//         [
-//             'type' => 'user',
-//             'field_type' => 'select_advanced',
-//             'field' => 'designer',
-//             'columns' => 6,
-//             'label' => 'Designer',
-//             'roles' => ['designer']
-//         ],
-//         [
-//             'type' => 'date',
-//             'columns' => 6,
-//             'field' => 'assigned_date',
-//             'label' => 'Assigned Date'
-//         ]
-//     ]
-// ]);
-
 piklist('field', [
     'type' => 'group',
     'field' => 'order_items',

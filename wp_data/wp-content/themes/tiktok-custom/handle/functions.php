@@ -25,7 +25,8 @@ function get_web_config()
     return $config;
 }
 
-function create_notification($user_id, $title, $message, $type = 'general', $related_post = 0) {
+function create_notification($user_id, $title, $message, $type = 'general', $related_post = 0, $comment_id = null)
+{
     $notification_id = wp_insert_post([
         'post_type' => 'notification',
         'post_title' => $title,
@@ -34,10 +35,12 @@ function create_notification($user_id, $title, $message, $type = 'general', $rel
         'meta_input' => [
             'user_id' => $user_id,
             'status' => 'unread',
-            'type' => $type,
             'related_post' => $related_post,
+            'type' => $type,
+            'comment_id' => $comment_id,
         ],
     ]);
+
     return $notification_id;
 }
 

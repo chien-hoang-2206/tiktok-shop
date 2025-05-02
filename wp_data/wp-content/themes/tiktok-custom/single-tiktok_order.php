@@ -57,7 +57,8 @@
 
   .dco-attachment img {
     border-radius: 8px;
-    max-height: 400px;
+    height: 400px;
+    width: 100%;
   }
 
   .badge {

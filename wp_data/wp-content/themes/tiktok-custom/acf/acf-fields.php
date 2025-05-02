@@ -42,9 +42,6 @@ add_action('init', function () {
             0 => 'title',
             1 => 'editor',
         ),
-        'taxonomies' => array(
-            0 => 'category',
-        ),
         'delete_with_user' => false,
     ));
 

@@ -161,6 +161,25 @@ function create_tiktok_order_post($order, $shop_id)
         update_field('status', '1', $post_id);
 
         update_order_items_from_api($post_id, $order['line_items']);
+
+        $sellers = get_users(['role' => 'seller']);
+        $designer_name = 'Unknown';
+        if ($designer_id) {
+            $designer_user = get_user_by('ID', $designer_id);
+            if ($designer_user) {
+                $designer_name = $designer_user->display_name;
+            }
+        }
+
+        foreach ($sellers as $seller) {
+            create_notification(
+                $seller->ID,
+                'New Order #' . $order_id . ' (Assigned to ' . $designer_name . ')',
+                'Order #' . $order_id . ' has been created and assigned to ' . $designer_name . '.',
+                'new_order',
+                $post_id
+            );
+        }
     }
 }
 
