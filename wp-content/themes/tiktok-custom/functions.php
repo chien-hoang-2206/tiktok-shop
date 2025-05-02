@@ -14,3 +14,15 @@ function tiktok_custom_enqueue() {
     wp_enqueue_script('tiktok-custom-js', get_template_directory_uri() . '/assets/js/main.js', [], false, true);
 }
 add_action('wp_enqueue_scripts', 'tiktok_custom_enqueue');
+
+add_filter('piklist_post_types', function($post_types) {
+    $post_types['tiktok_order'] = [
+        'labels' => piklist('post_type_labels', 'TikTok Order'),
+        'title' => __('TikTok Order'),
+        'public' => true,
+        'menu_icon' => 'dashicons-cart',
+        'supports' => ['title'],
+    ];
+    return $post_types;
+});
+
