@@ -91,8 +91,6 @@ function sync_tiktok_orders() {
 
     $data = json_decode(wp_remote_retrieve_body($response), true);
     $orders = $data['data']['orders'] ?? [];
-    // echo '<pre>';echo json_encode($orders, JSON_PRETTY_PRINT);echo '</pre>';
-    // exit;
 
     foreach ($orders as $order) {
         create_tiktok_order_post($order, $shop_id);
@@ -106,8 +104,6 @@ function create_tiktok_order_post($order, $shop_id) {
     $customer_name = $order['buyer_email'] ?? '';
     $total_price = $order['payment']['total_amount'] ?? '';
     $net_revenue = $order['payment']['original_total_product_price'] ?? '';
-
-    $product_name = $order['product_list'][0]['product_name'] ?? 'TikTok Order';
 
     if (!$order_id) return;
 
@@ -132,7 +128,7 @@ function create_tiktok_order_post($order, $shop_id) {
     $post_id = wp_insert_post([
         'post_type'   => 'tiktok_order',
         'post_status' => 'publish',
-        'post_title'  => $product_name,
+        'post_title'  => $order_id,
     ]);
 
     if ($post_id && !is_wp_error($post_id)) {

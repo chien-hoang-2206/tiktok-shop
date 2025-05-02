@@ -53,14 +53,11 @@ piklist('field', [
     'add_more' => true,
     'fields' => [
         [
-            'type' => 'file',
+            'type' => 'url',
             'field' => 'image',
             'label' => 'Product Image',
             'columns' => 12,
-            'options' => array(
-                'save' => 'url',
-            )
-            ],
+        ],
         [
             'type' => 'text',
             'field' => 'product_name',
@@ -90,5 +87,5 @@ piklist('field', [
 
 
 piklist('field', ['type' => 'number', 'field' => 'total', 'label' => 'Total Price (VND)', 'columns' => 6]);
-piklist('field', ['type' => 'number', 'field' => 'net_revenue', 'label' => 'Net Revenue', 'columns' => 6]);
+piklist('field', ['type' => 'number', 'field' => 'net_revenue', 'label' => 'Net Revenue (VND)', 'columns' => 6]);
 
