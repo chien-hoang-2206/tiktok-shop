@@ -1,6 +1,7 @@
 <?php
 require_once get_template_directory() . '/includes/tiktok-api.php';
 require_once get_template_directory() . '/handle/functions.php';
+require_once get_template_directory() . '/acf/acf-fields.php';
 
 add_action('admin_enqueue_scripts', function ($hook) {
     wp_enqueue_script(
