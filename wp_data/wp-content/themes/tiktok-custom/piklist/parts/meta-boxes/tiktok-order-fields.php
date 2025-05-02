@@ -80,12 +80,12 @@ piklist('field', [
             'type' => 'number',
             'field' => 'price',
             'columns' => 6,
-            'label' => 'Price (VND)'
+            'label' => 'Price (VNĐ)'
         ],
     ]
 ]);
 
 
-piklist('field', ['type' => 'number', 'field' => 'total', 'label' => 'Total Price (VND)', 'columns' => 6]);
-piklist('field', ['type' => 'number', 'field' => 'net_revenue', 'label' => 'Net Revenue (VND)', 'columns' => 6]);
+piklist('field', ['type' => 'number', 'field' => 'total', 'label' => 'Total Price (VNĐ)', 'columns' => 6]);
+piklist('field', ['type' => 'number', 'field' => 'net_revenue', 'label' => 'Net Revenue (VNĐ)', 'columns' => 6]);
 

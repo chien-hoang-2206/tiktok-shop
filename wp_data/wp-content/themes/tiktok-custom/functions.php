@@ -65,6 +65,7 @@ add_filter('manage_tiktok_order_posts_columns', function ($columns) {
         'order_number' => 'Order Number',
         'order_items' => 'Products',
         'designer' => 'Designer',
+        'deadline' => 'Deadline',
         'update_link' => 'Update Link',
         'status' => 'Status',
         'actions' => 'Actions',
@@ -148,11 +149,18 @@ add_action('manage_tiktok_order_posts_custom_column', function ($column, $post_i
             ";
             echo $link ? "<a href='$link' target='_blank' style='$button_style'>View Design</a>" : 'Not updated yet';
             break;
+        case 'deadline':
+            $deadline = get_post_meta($post_id, 'deadline', true);
+            $datetime = new DateTime($deadline);
+            echo $datetime->format('d-m-Y');
+            break;
 
         case 'actions':
+            $comment_link = get_permalink($post_id) . '#respond';
+
             echo '
                     <div style="display: flex; gap: 8px;">
-                        <a href="#" class="request-revision" data-id="' . $post_id . '" style="
+                        <a  href="' . esc_url($comment_link) . '" class="request-revision" data-id="' . $post_id . '" style="
                             display: inline-block;
                             padding: 4px 10px;
                             background-color: #fd7e14;
@@ -179,7 +187,7 @@ add_action('manage_tiktok_order_posts_custom_column', function ($column, $post_i
     }
 }, 10, 2);
 
-// api 
+// update status done
 add_action('wp_ajax_mark_order_complete', function () {
     $post_id = intval($_POST['post_id'] ?? 0);
 
@@ -190,4 +198,28 @@ add_action('wp_ajax_mark_order_complete', function () {
     update_post_meta($post_id, 'status', '3');
 
     wp_send_json_success(['message' => 'Status updated to Completed']);
+});
+
+// fix comment form uploae
+add_action('wp_footer', function () {
+    if (!is_singular())
+        return;
+
+    ?>
+    <script>
+        const commentForm = document.getElementById('commentform');
+        if (commentForm && !commentForm.querySelector('#comment-attachment')) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.name = 'comment_attachment';
+            input.id = 'comment-attachment';
+            input.style = 'display: none;';
+            input.multiple = true;
+            input.style.marginTop = '12px';
+            commentForm.appendChild(input);
+
+            commentForm.setAttribute('enctype', 'multipart/form-data');
+        }
+    </script>
+    <?php
 });
