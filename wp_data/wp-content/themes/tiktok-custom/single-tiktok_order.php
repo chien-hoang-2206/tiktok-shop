@@ -52,6 +52,12 @@
   .order-items-table img {
     display: block;
     margin: 0 auto;
+    border-radius: 12px;
+  }
+
+  .dco-attachment img {
+    border-radius: 8px;
+    max-height: 400px;
   }
 
   .badge {
@@ -270,7 +276,7 @@
               if (is_array($items)) {
                 foreach ($items as $item) {
                   echo '<tr>';
-                  echo '<td><img src="' . esc_url($item['image'] ?? '') . '" style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px;" /></td>';
+                  echo '<td><img src="' . esc_url($item['image'] ?? '') . '" style="width: 60px; height: 60px; object-fit: cover; border-radius: 12px;" /></td>';
                   echo '<td style="text-align: left;">' . esc_html($item['product_name'] ?? '-') . '</td>';
                   echo '<td>' . esc_html($item['sku'] ?? '-') . '</td>';
                   echo '<td>' . intval($item['quantity'] ?? 1) . '</td>';

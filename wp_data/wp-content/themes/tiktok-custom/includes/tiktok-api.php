@@ -1,22 +1,25 @@
 <?php
 
-function get_tiktok_config() {
+function get_tiktok_config()
+{
     $page = get_page_by_path('setting-page');
-    if (!$page) return [];
+    if (!$page)
+        return [];
 
     $id = $page->ID;
 
     return [
         'access_token' => get_field('access_token', $id),
         'app_secret' => get_field('app_secret', $id),
-        'app_key'      => get_field('app_key', $id),
-        'shop_cipher'  => get_field('shop_cipher', $id),
-        'shop_id'      => get_field('shop_id', $id),
-        'version'      => get_field('version', $id),
+        'app_key' => get_field('app_key', $id),
+        'shop_cipher' => get_field('shop_cipher', $id),
+        'shop_id' => get_field('shop_id', $id),
+        'version' => get_field('version', $id),
     ];
 }
 
-function generate_tiktok_sign($path, $params, $body = null, $app_secret) {
+function generate_tiktok_sign($path, $params, $body = null, $app_secret)
+{
     unset($params['sign'], $params['access_token']);
     ksort($params);
 
@@ -41,14 +44,15 @@ function generate_tiktok_sign($path, $params, $body = null, $app_secret) {
     return hash_hmac('sha256', $sign_string, $app_secret);
 }
 
-function sync_tiktok_orders() {
+function sync_tiktok_orders()
+{
     $config = get_tiktok_config();
     $access_token = $config['access_token'];
-    $app_key =  $config['app_key'];
-    $app_secret =  $config['app_secret'];
-    $shop_cipher =  $config['shop_cipher'];
-    $shop_id =  $config['shop_id'];
-    $version =  $config['version'];
+    $app_key = $config['app_key'];
+    $app_secret = $config['app_secret'];
+    $shop_cipher = $config['shop_cipher'];
+    $shop_id = $config['shop_id'];
+    $version = $config['version'];
     $timestamp = time();
     $page_size = 10;
 
@@ -85,8 +89,18 @@ function sync_tiktok_orders() {
         'timeout' => 20,
     ]);
 
+    $body = json_decode(wp_remote_retrieve_body($response), true);
+
     if (is_wp_error($response)) {
         wp_die('API TikTok Error Access Token: ' . esc_html($response->get_error_message()), 'Toktok API Error', ['response' => 500]);
+    }
+
+    if (isset($body['code']) && $body['code'] != 0) {
+        error_log('[TikTok API Error ' . $body['code'] . '] ' . $body['message']);
+        add_action('admin_notices', function () use ($body) {
+            echo '<div class="notice notice-error"><p>TikTok API: ' . esc_html($body['message']) . '</p></div>';
+        });
+        return null;
     }
 
     $data = json_decode(wp_remote_retrieve_body($response), true);
@@ -97,7 +111,8 @@ function sync_tiktok_orders() {
     }
 }
 
-function create_tiktok_order_post($order, $shop_id) {
+function create_tiktok_order_post($order, $shop_id)
+{
     $order_id = $order['id'] ?? '';
     $shop_code = $shop_id;
     $order_notice = $order['buyer_message'] ?? '';
@@ -105,18 +120,20 @@ function create_tiktok_order_post($order, $shop_id) {
     $total_price = $order['payment']['total_amount'] ?? '';
     $net_revenue = $order['payment']['original_total_product_price'] ?? '';
 
-    if (!$order_id) return;
+    if (!$order_id)
+        return;
 
     // Kiểm tra nếu đơn hàng đã tồn tại
     $existing_posts = get_posts([
-        'post_type'  => 'tiktok_order',
-        'meta_key'   => 'order_number',
+        'post_type' => 'tiktok_order',
+        'meta_key' => 'order_number',
         'meta_value' => $order_id,
         'numberposts' => 1,
-        'fields'     => 'ids',
+        'fields' => 'ids',
     ]);
 
-    if (!empty($existing_posts)) return;
+    if (!empty($existing_posts))
+        return;
 
     // Tìm designer có ít đơn nhất
     $designer_id = find_designer_with_fewest_orders();
@@ -126,9 +143,9 @@ function create_tiktok_order_post($order, $shop_id) {
 
     // Tạo bài viết
     $post_id = wp_insert_post([
-        'post_type'   => 'tiktok_order',
+        'post_type' => 'tiktok_order',
         'post_status' => 'publish',
-        'post_title'  => $order_id,
+        'post_title' => $order_id,
     ]);
 
     if ($post_id && !is_wp_error($post_id)) {
@@ -164,7 +181,8 @@ function update_order_items_from_api($post_id, $line_items)
     update_post_meta($post_id, 'order_items', $order_items);
 }
 
-function find_designer_with_fewest_orders() {
+function find_designer_with_fewest_orders()
+{
     $designers = get_users([
         'role' => 'designer',
         'fields' => ['ID'],

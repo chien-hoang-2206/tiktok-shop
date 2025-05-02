@@ -12,25 +12,6 @@ add_action('admin_enqueue_scripts', function ($hook) {
     );
 });
 
-
-function tiktok_custom_setup()
-{
-    add_theme_support('title-tag');
-    add_theme_support('post-thumbnails');
-    register_nav_menus([
-        'main_menu' => 'Main Menu',
-        'footer_menu' => 'Footer Menu',
-    ]);
-}
-add_action('after_setup_theme', 'tiktok_custom_setup');
-
-function tiktok_custom_enqueue()
-{
-    wp_enqueue_style('tiktok-custom-style', get_stylesheet_uri());
-    wp_enqueue_script('tiktok-custom-js', get_template_directory_uri() . '/assets/js/main.js', [], false, true);
-}
-add_action('wp_enqueue_scripts', 'tiktok_custom_enqueue');
-
 // add roles
 function add_custom_roles()
 {
@@ -40,23 +21,29 @@ function add_custom_roles()
 }
 add_action('init', 'add_custom_roles');
 
+// disable category
+add_action('init', function () {
+    unregister_taxonomy_for_object_type('category', 'tiktok_order');
+}, 100);
+
 // call api
 add_action('load-edit.php', function () {
     if ($_GET['post_type'] === 'tiktok_order') {
         $last_call = get_transient('tiktok_order_last_call');
 
-        if (!$last_call || time() - $last_call > 300) {
-            sync_tiktok_orders();
-            set_transient('tiktok_order_last_call', time(), 300);
-        }
+        sync_tiktok_orders();
+        // if (!$last_call || time() - $last_call > 300) {
+        //     set_transient('tiktok_order_last_call', time(), 300);
+        // }
     }
 });
 
-add_action('init', function () {
-    unregister_taxonomy_for_object_type('category', 'tiktok_order');
-}, 100);
-
 // custom order list
+add_filter('pre_comment_approved', function ($approved, $commentdata) {
+    return 1; // 1 = approved
+}, 10, 2);
+
+
 add_filter('manage_tiktok_order_posts_columns', function ($columns) {
     unset($columns['title']);
 
@@ -200,11 +187,10 @@ add_action('wp_ajax_mark_order_complete', function () {
     wp_send_json_success(['message' => 'Status updated to Completed']);
 });
 
-// fix comment form uploae
+// fix comment form upload
 add_action('wp_footer', function () {
     if (!is_singular())
         return;
-
     ?>
     <script>
         const commentForm = document.getElementById('commentform');
