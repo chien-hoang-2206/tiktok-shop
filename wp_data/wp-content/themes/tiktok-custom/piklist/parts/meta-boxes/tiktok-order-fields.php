@@ -9,7 +9,7 @@ Order: 2
 piklist('field', ['type' => 'text', 'field' => 'order_number', 'label' => 'Order Number', 'columns' => 6]);
 piklist('field', ['type' => 'text', 'field' => 'shop_code', 'label' => 'Shop Code', 'columns' => 6]);
 piklist('field', ['type' => 'textarea', 'field' => 'order_notice', 'label' => 'Order Notice', 'columns' => 6]);
-piklist('field', ['type' => 'text', 'field' => 'customer_name', 'label' => 'Customer Name', 'columns' => 6]);
+piklist('field', ['type' => 'text', 'field' => 'customer_name', 'label' => 'Customer Email', 'columns' => 6]);
 
 piklist('field', [
     'type' => 'group',

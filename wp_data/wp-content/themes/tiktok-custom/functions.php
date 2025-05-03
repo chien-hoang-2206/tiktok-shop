@@ -188,6 +188,38 @@ add_action('wp_ajax_mark_order_complete', function () {
     wp_send_json_success(['message' => 'Status updated to Completed']);
 });
 
+// filter date order
+add_action('restrict_manage_posts', function () {
+    global $typenow;
+
+    if ($typenow === 'tiktok_order') {
+        $date_filter = $_GET['filter_by_date'] ?? '';
+        echo '<input type="date" name="filter_by_date" value="' . esc_attr($date_filter) . '" />';
+    }
+});
+add_action('pre_get_posts', function ($query) {
+    if (
+        is_admin() &&
+        $query->is_main_query() &&
+        $query->get('post_type') === 'tiktok_order' &&
+        !empty($_GET['filter_by_date'])
+    ) {
+        $filter_date = sanitize_text_field($_GET['filter_by_date']);
+
+        // Convert date to start + end of day
+        $start = date('Y-m-d 00:00:00', strtotime($filter_date));
+        $end = date('Y-m-d 23:59:59', strtotime($filter_date));
+
+        $query->set('date_query', [
+            [
+                'after' => $start,
+                'before' => $end,
+                'inclusive' => true,
+            ],
+        ]);
+    }
+});
+
 // custom order list end
 
 
@@ -345,3 +377,156 @@ add_action('manage_notification_posts_custom_column', function ($column, $post_i
         }
     }
 }, 10, 2);
+
+
+// dashboard custom
+add_action('wp_dashboard_setup', function () {
+    $user = wp_get_current_user();
+    if (in_array('designer', (array) $user->roles)) {
+        wp_add_dashboard_widget(
+            'tiktok_order_summary_widget',
+            '📊 TikTok Order Dashboard',
+            'render_tiktok_order_summary_widget'
+        );
+    }
+    if (in_array('seller', (array)$user->roles) || in_array('manager', (array)$user->roles)){
+        wp_add_dashboard_widget('tiktok_order_summary_widget', '📅 TikTok Orders Summary', 'render_tiktok_order_today_summary_widget');
+        wp_add_dashboard_widget('widget_total_orders', '📦 Total Orders', 'render_widget_total_orders');
+        wp_add_dashboard_widget('widget_revising_orders', '✏️ Revising Orders', 'render_widget_revising_orders');
+        wp_add_dashboard_widget('widget_completed_orders', '✅ Completed Orders', 'render_widget_completed_orders');
+        wp_add_dashboard_widget('widget_revenue', '💰 Revenue', 'render_widget_revenue');
+    };
+});
+function render_tiktok_order_summary_widget() {
+    $user_id = get_current_user_id();
+    $today = date('Y-m-d');
+    $month = date('Y-m');
+
+    // Lấy tất cả đơn được gán cho designer hiện tại
+    $orders = get_posts([
+        'post_type' => 'tiktok_order',
+        'meta_query' => [
+            [
+                'key' => 'designer',
+                'value' => $user_id,
+                'compare' => '=',
+            ]
+        ],
+        'post_status' => 'publish',
+        'numberposts' => -1,
+        'fields' => 'ids'
+    ]);
+
+    $completed = 0;
+    $revising = 0;
+    $revenue_total = 0;
+    $revenue_month = 0;
+
+    foreach ($orders as $order_id) {
+        $status = get_post_meta($order_id, 'status', true);
+        $created_at = get_the_date('Y-m', $order_id);
+        $revenue = (int)get_post_meta($order_id, 'net_revenue', true);
+
+        $revenue_total += $revenue;
+        if ($created_at === $month) {
+            $revenue_month += $revenue;
+        }
+
+        if ($status == 2) $revising++;
+        if ($status == 3) $completed++;
+    }
+
+    echo "<ul style='line-height:1.9em;font-size:14px'>";
+    echo "<li>🎨 <strong>Assigned Orders:</strong> " . count($orders) . "</li>";
+    echo "<li>✅ <strong>Completed:</strong> $completed</li>";
+    echo "<li>✏️ <strong>Revising:</strong> $revising</li>";
+    echo "<li>💰 <strong>Total Revenue:</strong> " . number_format($revenue_total) . "VNĐ</li>";
+    echo "<li>📅 <strong>This Month Revenue:</strong> " . number_format($revenue_month) . "VNĐ</li>";
+    echo "</ul>";
+}
+function render_tiktok_order_today_summary_widget() {
+    $month = date('Y-m');
+    $today = date('Y-m-d');
+
+    // Đơn hàng hôm nay
+    $today_orders = get_posts([
+        'post_type' => 'tiktok_order',
+        'post_status' => 'publish',
+        'date_query' => [
+            [
+                'after'  => $today . ' 00:00:00',
+                'before' => $today . ' 23:59:59',
+                'inclusive' => true
+            ]
+        ],
+        'numberposts' => -1,
+        'fields' => 'ids'
+    ]);
+
+    $completed = 0;
+    $revising = 0;
+    $revenue_today = 0;
+    $revenue_month = 0;
+
+    foreach ($today_orders as $order_id) {
+        $status = get_post_meta($order_id, 'status', true);
+        $revenue = (int)get_post_meta($order_id, 'net_revenue', true);
+
+        $revenue_today += $revenue;
+
+        if ($status == 2) $revising++;
+        if ($status == 3) $completed++;
+    }
+
+    // Doanh thu tháng
+    $month_orders = get_posts([
+        'post_type' => 'tiktok_order',
+        'post_status' => 'publish',
+        'date_query' => [
+            [
+                'after' => $month . '-01',
+                'before' => $month . '-31',
+                'inclusive' => true
+            ]
+        ],
+        'numberposts' => -1,
+        'fields' => 'ids'
+    ]);
+
+    foreach ($month_orders as $oid) {
+        $revenue_month += (int)get_post_meta($oid, 'net_revenue', true);
+    }
+
+    echo "<ul style='line-height:1.9em;font-size:14px'>";
+    echo "<li>📦 <strong>Today Orders:</strong> " . count($today_orders) . "</li>";
+    echo "<li>✏️ <strong>Revising:</strong> $revising</li>";
+    echo "<li>✅ <strong>Completed:</strong> $completed</li>";
+    echo "<li>💰 <strong>Today Revenue:</strong> " . number_format($revenue_today) . " VNĐ</li>";
+    echo "<li>📅 <strong>This Month Revenue:</strong> " . number_format($revenue_month) . " VNĐ</li>";
+    echo "</ul>";
+}
+
+
+function render_widget_total_orders()
+{
+    $data = get_order_stats_last_7_days();
+    render_chart_widget('chart_total_orders', 'Total Orders', $data, '#0073aa');
+}
+
+function render_widget_completed_orders()
+{
+    $data = get_order_stats_last_7_days('3'); // status = 3 (completed)
+    render_chart_widget('chart_completed_orders', 'Completed Orders', $data, '#28a745');
+}
+
+function render_widget_revising_orders()
+{
+    $data = get_order_stats_last_7_days('2'); // status = 2 (revising)
+    render_chart_widget('chart_revising_orders', 'Revising Orders', $data, '#fd7e14');
+}
+
+function render_widget_revenue()
+{
+    $data = get_order_stats_last_7_days(null, true);
+    render_chart_widget('chart_revenue_orders', 'Revenue ($)', $data, '#6f42c1');
+}
