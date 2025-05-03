@@ -295,7 +295,11 @@ function render_manager_dashboard_widget()
     echo '<div style="display: flex; align-items: center; gap: 12px;">';
     echo '<label for="start_date" style="font-weight: 600; min-width: 60px;">From:</label>';
     echo '<input type="date" id="start_date" name="start_date" value="' . esc_attr($start_date) . '" style="padding: 6px;">';
-    echo '<label for="end_date" style="font-weight: 600; min-width: 40px;">To:</label>';
+    echo '</div>';
+
+
+    echo '<div style="display: flex; align-items: center; gap: 12px;">';
+    echo '<label for="end_date" style="font-weight: 600; min-width: 60px;">To:</label>';
     echo '<input type="date" id="end_date" name="end_date" value="' . esc_attr($end_date) . '" style="padding: 6px;">';
     echo '</div>';
 
