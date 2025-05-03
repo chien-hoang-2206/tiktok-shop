@@ -53,8 +53,9 @@ add_filter('manage_tiktok_order_posts_columns', function ($columns) {
         'order_number' => 'Order Number',
         'order_items' => 'Products',
         'designer' => 'Designer',
+        'published_at' => 'Published At',
         'deadline' => 'Deadline',
-        'update_link' => 'Update Link',
+        // 'update_link' => 'Update Link',
         'status' => 'Status',
         'actions' => 'Actions',
     ];
@@ -137,6 +138,11 @@ add_action('manage_tiktok_order_posts_custom_column', function ($column, $post_i
             ";
             echo $link ? "<a href='$link' target='_blank' style='$button_style'>View Design</a>" : 'Not updated yet';
             break;
+
+        case 'published_at':
+            echo get_the_date('d/m/Y H:i', $post_id);
+            break;
+
         case 'deadline':
             $deadline = get_post_meta($post_id, 'deadline', true);
             $datetime = new DateTime($deadline);
@@ -144,7 +150,7 @@ add_action('manage_tiktok_order_posts_custom_column', function ($column, $post_i
             break;
 
         case 'actions':
-            $comment_link = get_permalink($post_id) . '#respond';
+            $comment_link = get_permalink($post_id);
 
             echo '
                     <div style="display: flex; gap: 8px;">
@@ -197,28 +203,33 @@ add_action('restrict_manage_posts', function () {
         echo '<input type="date" name="filter_by_date" value="' . esc_attr($date_filter) . '" />';
     }
 });
+
 add_action('pre_get_posts', function ($query) {
     if (
         is_admin() &&
         $query->is_main_query() &&
-        $query->get('post_type') === 'tiktok_order' &&
-        !empty($_GET['filter_by_date'])
+        $query->get('post_type') === 'tiktok_order'
     ) {
-        $filter_date = sanitize_text_field($_GET['filter_by_date']);
+        // Lọc theo ngày nếu có
+        if (!empty($_GET['filter_by_date'])) {
+            $filter_date = sanitize_text_field($_GET['filter_by_date']);
+            $start = date('Y-m-d 00:00:00', strtotime($filter_date));
+            $end = date('Y-m-d 23:59:59', strtotime($filter_date));
 
-        // Convert date to start + end of day
-        $start = date('Y-m-d 00:00:00', strtotime($filter_date));
-        $end = date('Y-m-d 23:59:59', strtotime($filter_date));
+            $query->set('date_query', [
+                [
+                    'after' => $start,
+                    'before' => $end,
+                    'inclusive' => true,
+                ],
+            ]);
+        }
 
-        $query->set('date_query', [
-            [
-                'after' => $start,
-                'before' => $end,
-                'inclusive' => true,
-            ],
-        ]);
+        $query->set('orderby', 'date');
+        $query->set('order', 'DESC');
     }
 });
+
 
 // custom order list end
 
@@ -280,6 +291,8 @@ add_action('pre_get_posts', function ($query) {
                 'compare' => '=',
             ]
         ]);
+        $query->set('orderby', 'date');
+        $query->set('order', 'DESC');
     }
 });
 
