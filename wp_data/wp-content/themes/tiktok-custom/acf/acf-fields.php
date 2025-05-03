@@ -193,31 +193,6 @@ add_action('acf/include_fields', function () {
                 'ajax' => 0,
                 'placeholder' => '',
             ),
-            array(
-                'key' => 'field_6815f2f32afc7',
-                'label' => 'Seller',
-                'name' => 'seller_id',
-                'aria-label' => '',
-                'type' => 'user',
-                'instructions' => '',
-                'required' => 0,
-                'conditional_logic' => 0,
-                'wrapper' => array(
-                    'width' => '',
-                    'class' => '',
-                    'id' => '',
-                ),
-                'role' => array(
-                    0 => 'seller',
-                ),
-                'return_format' => 'id',
-                'multiple' => 0,
-                'allow_null' => 0,
-                'allow_in_bindings' => 0,
-                'bidirectional' => 0,
-                'bidirectional_target' => array(
-                ),
-            ),
         ),
         'location' => array(
             array(
@@ -395,31 +370,6 @@ add_action('acf/include_fields', function () {
                 'placeholder' => '',
                 'prepend' => '',
                 'append' => '',
-            ),
-            array(
-                'key' => 'field_681398030df80',
-                'label' => 'Seller Of Shop',
-                'name' => 'seller_id',
-                'aria-label' => '',
-                'type' => 'user',
-                'instructions' => '',
-                'required' => 1,
-                'conditional_logic' => 0,
-                'wrapper' => array(
-                    'width' => '',
-                    'class' => '',
-                    'id' => '',
-                ),
-                'role' => array(
-                    0 => 'seller',
-                ),
-                'return_format' => 'id',
-                'multiple' => 0,
-                'allow_null' => 1,
-                'allow_in_bindings' => 0,
-                'bidirectional' => 0,
-                'bidirectional_target' => array(
-                ),
             ),
             array(
                 'key' => 'field_681398030df79',
