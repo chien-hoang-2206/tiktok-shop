@@ -15,7 +15,6 @@ function get_tiktok_config()
         'shop_cipher' => get_field('shop_cipher', $id),
         'shop_id' => get_field('shop_id', $id),
         'version' => get_field('version', $id),
-        'seller_id' => get_field('seller_id', $id),
     ];
 }
 
@@ -54,8 +53,6 @@ function sync_tiktok_orders()
     $shop_cipher = $config['shop_cipher'];
     $shop_id = $config['shop_id'];
     $version = $config['version'];
-    $seller_id = $config['seller_id'];
-
     $timestamp = time();
     $page_size = 10;
 
@@ -110,11 +107,11 @@ function sync_tiktok_orders()
     $orders = $data['data']['orders'] ?? [];
 
     foreach ($orders as $order) {
-        create_tiktok_order_post($order, $shop_id, $seller_id);
+        create_tiktok_order_post($order, $shop_id);
     }
 }
 
-function create_tiktok_order_post($order, $shop_id, $seller_id)
+function create_tiktok_order_post($order, $shop_id)
 {
     $order_id = $order['id'] ?? '';
     $shop_code = $shop_id;
@@ -158,7 +155,6 @@ function create_tiktok_order_post($order, $shop_id, $seller_id)
         update_field('customer_name', $customer_name, $post_id);
         update_field('total', $total_price, $post_id);
         update_field('net_revenue', $net_revenue, $post_id);
-        update_field('seller_id', $seller_id, $post_id);
 
         update_field('designer', $designer_id, $post_id);
         update_field('deadline', $deadline, $post_id);
@@ -175,13 +171,15 @@ function create_tiktok_order_post($order, $shop_id, $seller_id)
             }
         }
 
-        create_notification(
-            $seller_id,
-            'New Order #' . $order_id . ' (Assigned to ' . $designer_name . ')',
-            'Order #' . $order_id . ' has been created and assigned to ' . $designer_name . '.',
-            'new_order',
-            $post_id
-        );
+        foreach ($sellers as $seller) {
+            create_notification(
+                $seller->ID,
+                'New Order #' . $order_id . ' (Assigned to ' . $designer_name . ')',
+                'Order #' . $order_id . ' has been created and assigned to ' . $designer_name . '.',
+                'new_order',
+                $post_id
+            );
+        }
     }
 }
 
