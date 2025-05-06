@@ -167,53 +167,117 @@ function render_tiktok_order_today_summary_widget()
     foreach ($month_orders as $oid) {
         $revenue_month += (int) get_post_meta($oid, 'net_revenue', true);
     }
-
+    echo "<div style=''>";
     echo "<ul style='line-height:1.9em;font-size:14px'>";
     echo "<li>📦 <strong>Today Orders:</strong> " . count($today_orders) . "</li>";
     echo "<li>✏️ <strong>Revising:</strong> $revising</li>";
     echo "<li>✅ <strong>Completed:</strong> $completed</li>";
     echo "<li>💰 <strong>Today Revenue:</strong> " . number_format($revenue_today) . " VNĐ</li>";
-    echo "<li>📅 <strong>This Month Revenue:</strong> " . number_format($revenue_month) . " VNĐ</li>";
     echo "</ul>";
+    echo "</div>";
+}
+
+function render_tiktok_order_month_summary_widget()
+{
+    $month = $_GET['summary_month'] ?? date('m');
+    $year = $_GET['summary_year'] ?? date('Y');
+
+    // Xác định ngày đầu & cuối tháng
+    $start_date = "$year-$month-01";
+    $end_date = date('Y-m-t', strtotime($start_date));
+
+    // Truy vấn đơn hàng theo thời gian
+    $orders = get_posts([
+        'post_type'      => 'tiktok_order',
+        'post_status'    => 'publish',
+        'posts_per_page' => -1,
+        'date_query'     => [
+            [
+                'after'     => $start_date,
+                'before'    => $end_date,
+                'inclusive' => true,
+            ]
+        ],
+        'fields' => 'ids',
+    ]);
+
+    // Tính revenue
+    $total_revenue = 0;
+    foreach ($orders as $post_id) {
+        $total_revenue += (int)get_post_meta($post_id, 'net_revenue', true);
+    }
+
+    // Giao diện form chọn tháng/năm
+    ?>
+    <form method="get" action="" style="min-height: 26vh;">
+        <div style="display: flex; margin-bottom: 12px; flex-direction: row; justify-content: flex-start; gap:10px; align-items: center;">
+
+            <select name="summary_month" style="padding: 6px; min-width: 60px;">
+                <?php
+                    for ($m = 1; $m <= 12; $m++) {
+                        printf('<option value="%02d"%s>%02d</option>', $m, $month == sprintf('%02d', $m) ? ' selected' : '', $m);
+                    }
+                    ?>
+            </select>
+            <select name="summary_year" style="padding: 6px; min-width: 80px;">
+                <?php
+                $this_year = date('Y');
+                for ($y = $this_year - 2; $y <= $this_year + 1; $y++) {
+                    printf('<option value="%d"%s>%d</option>', $y, $year == $y ? ' selected' : '', $y);
+                }
+                ?>
+            </select>
+            <button type="submit" class="button button-primary">Filter</button>
+        </div>
+        <ul style="font-size: 14px; line-height: 1.9em; margin: 0;">
+            <li>📦 <strong>Total Orders:</strong> <?php echo count($orders); ?></li>
+            <li>💰 <strong>Total Revenue:</strong> <?php echo number_format($total_revenue); ?> VNĐ</li>
+        </ul>
+    </form>
+
+    <?php
 }
 
 function render_widget_total_orders_month()
 {
-    $data = get_order_stats_current_month(null, false);
+    $data = get_order_stats_by_month(null, false);
     render_chart_widget('chart_total_orders_month', 'Total Orders This Month', $data['data'], '#0073aa', $data['labels']);
 }
 
 function render_widget_completed_orders()
 {
-    $data = get_order_stats_current_month('3', false); // status = 3
+    $data = get_order_stats_by_month('3', false); // status = 3
     render_chart_widget('chart_completed_orders', 'Completed Orders This Month', $data['data'], '#28a745', $data['labels']);
 }
 
 function render_widget_revising_orders()
 {
-    $data = get_order_stats_current_month('2', false); // status = 2
+    $data = get_order_stats_by_month('2', false); // status = 2
     render_chart_widget('chart_revising_orders', 'Revising Orders This Month', $data['data'], '#fd7e14', $data['labels']);
 }
 
 function render_widget_revenue()
 {
-    $data = get_order_stats_current_month(null, true);
+    $data = get_order_stats_by_month(null, true);
     render_chart_widget('chart_revenue_orders', 'Revenue This Month', $data['data'], '#6f42c1', $data['labels']);
 }
 
 
-function get_order_stats_current_month($status_filter = null, $return_revenue = false)
+function get_order_stats_by_month($status_filter = null, $return_revenue = false)
 {
     $results = [];
     $labels = [];
     $user_id = get_current_user_id();
     $user = wp_get_current_user();
 
-    $days_in_month = date('t');
-    $month = date('Y-m');
+    // Lấy tháng và năm từ URL nếu chưa truyền
+    $month = $_GET['summary_month'] ?? date('m');
+    $year = $_GET['summary_year'] ?? date('Y');
+
+    $days_in_month = date('t', strtotime("$year-$month-01"));
 
     for ($day = 1; $day <= $days_in_month; $day++) {
-        $date = $month . '-' . str_pad($day, 2, '0', STR_PAD_LEFT);
+        $date = "$year-$month-" . str_pad($day, 2, '0', STR_PAD_LEFT);
         $label = date('d/m', strtotime($date));
         $labels[] = $label;
 
@@ -275,7 +339,7 @@ function render_manager_dashboard_widget()
     $start_date = $_GET['start_date'] ?? date('Y-m-01');
     $end_date = $_GET['end_date'] ?? date('Y-m-t');
 
-    echo '<form method="get" action="' . admin_url('index.php') . '" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; max-width: 600px;">';
+    echo '<form method="get" action="' . admin_url('index.php') . '" style="display: flex; min-height: 24vh; flex-direction: column; gap: 12px; margin-bottom: 20px; max-width: 600px;">';
 
     echo '<input type="hidden" name="dashboard_widget" value="manager_dashboard_widget">';
 

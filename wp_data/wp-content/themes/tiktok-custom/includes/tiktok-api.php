@@ -14,6 +14,7 @@ function get_tiktok_config()
         'app_key' => get_field('app_key', $id),
         'shop_cipher' => get_field('shop_cipher', $id),
         'shop_id' => get_field('shop_id', $id),
+        'seller_id' => get_field('seller_id', $id),
         'version' => get_field('version', $id),
     ];
 }
@@ -52,6 +53,7 @@ function sync_tiktok_orders()
     $app_secret = $config['app_secret'];
     $shop_cipher = $config['shop_cipher'];
     $shop_id = $config['shop_id'];
+    $seller_id = $config['seller_id'];
     $version = $config['version'];
     $timestamp = time();
     $page_size = 10;
@@ -66,7 +68,7 @@ function sync_tiktok_orders()
         'version' => $version
     ];
 
-    $body = new stdClass(); // đúng là {}
+    $body = new stdClass();
 
     // Tạo sign đúng quy trình
     $sign = generate_tiktok_sign($path, $params, $body, $app_secret);
@@ -106,12 +108,23 @@ function sync_tiktok_orders()
     $data = json_decode(wp_remote_retrieve_body($response), true);
     $orders = $data['data']['orders'] ?? [];
 
+    $existing_orders = get_posts([
+        'post_type' => 'tiktok_order',
+        'post_status' => 'any',
+        'posts_per_page' => -1,
+        'fields' => 'titles',
+    ]);
+
+    $existing_titles = array_map(fn($post) => $post->post_title, $existing_orders);
+
     foreach ($orders as $order) {
-        create_tiktok_order_post($order, $shop_id);
+        if (!in_array($order['id'], $existing_titles)) {
+            create_tiktok_order_post($order, $shop_id, $seller_id);
+        }
     }
 }
 
-function create_tiktok_order_post($order, $shop_id)
+function create_tiktok_order_post($order, $shop_id, $seller_id)
 {
     $order_id = $order['id'] ?? '';
     $shop_code = $shop_id;
@@ -148,38 +161,42 @@ function create_tiktok_order_post($order, $shop_id)
         'post_title' => $order_id,
     ]);
 
-    if ($post_id && !is_wp_error($post_id)) {
-        update_field('order_number', $order_id, $post_id);
-        update_field('shop_code', $shop_code, $post_id);
-        update_field('order_notice', $order_notice, $post_id);
-        update_field('customer_name', $customer_name, $post_id);
-        update_field('total', $total_price, $post_id);
-        update_field('net_revenue', $net_revenue, $post_id);
+    try {
+        if ($post_id && !is_wp_error($post_id)) {
+            update_field('order_number', $order_id, $post_id);
+            update_field('shop_code', $shop_code, $post_id);
+            update_field('order_notice', $order_notice, $post_id);
+            update_field('customer_name', $customer_name, $post_id);
+            update_field('total', $total_price, $post_id);
+            update_field('net_revenue', $net_revenue, $post_id);
 
-        update_field('designer', $designer_id, $post_id);
-        update_field('deadline', $deadline, $post_id);
-        update_field('status', '1', $post_id);
+            update_field('designer', $designer_id, $post_id);
+            update_field('deadline', $deadline, $post_id);
+            update_field('status', '1', $post_id);
+            update_field('seller_id', $seller_id, $post_id);
 
-        update_order_items_from_api($post_id, $order['line_items']);
+            update_order_items_from_api($post_id, $order['line_items']);
 
-        $sellers = get_users(['role' => 'seller']);
-        $designer_name = 'Unknown';
-        if ($designer_id) {
-            $designer_user = get_user_by('ID', $designer_id);
-            if ($designer_user) {
-                $designer_name = $designer_user->display_name;
+            $designer_name = 'Unknown';
+            if ($designer_id) {
+                $designer_user = get_user_by('ID', $designer_id);
+                if ($designer_user) {
+                    $designer_name = $designer_user->display_name;
+                }
             }
-        }
-
-        foreach ($sellers as $seller) {
             create_notification(
-                $seller->ID,
+                $seller_id,
                 'New Order #' . $order_id . ' (Assigned to ' . $designer_name . ')',
                 'Order #' . $order_id . ' has been created and assigned to ' . $designer_name . '.',
                 'new_order',
                 $post_id
             );
         }
+    } catch (\Throwable $th) {
+        error_log('[TikTok API Error] ' . $th->getMessage());
+        add_action('admin_notices', function () use ($th) {
+            echo '<div class="notice notice-error"><p>TikTok API: ' . esc_html($th->getMessage()) . '</p></div>';
+        });
     }
 }
 

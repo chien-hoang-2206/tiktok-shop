@@ -1,4 +1,6 @@
 <?php
+date_default_timezone_set('Asia/Ho_Chi_Minh');
+
 require_once get_template_directory() . '/includes/tiktok-api.php';
 require_once get_template_directory() . '/handle/functions.php';
 require_once get_template_directory() . '/acf/acf-fields.php';
@@ -191,6 +193,16 @@ add_action('wp_ajax_mark_order_complete', function () {
 
     update_post_meta($post_id, 'status', '3');
 
+    $seller_id = get_post_meta($post_id, 'seller_id', true);
+    $order_number = get_post_meta($post_id, 'order_number', true);
+    create_notification(
+        $seller_id,
+        'Design Completed for Order #' . $order_number,
+        'Completed the design for order #' . get_the_title($post_id),
+        'Design Completed',
+        $post_id
+    );
+
     wp_send_json_success(['message' => 'Status updated to Completed']);
 });
 
@@ -199,8 +211,19 @@ add_action('restrict_manage_posts', function () {
     global $typenow;
 
     if ($typenow === 'tiktok_order') {
+        // Lọc theo ngày
         $date_filter = $_GET['filter_by_date'] ?? '';
-        echo '<input type="date" name="filter_by_date" value="' . esc_attr($date_filter) . '" />';
+        echo '<input type="date" name="filter_by_date" value="' . esc_attr($date_filter) . '" style="margin-right:10px;" />';
+
+        // Lọc theo trạng thái đơn hàng
+        ?>
+        <select name="order_status">
+            <option value="">All Status</option>
+            <option value="1" <?php selected($_GET['order_status'] ?? '', '1'); ?>>Waiting for Design</option>
+            <option value="2" <?php selected($_GET['order_status'] ?? '', '2'); ?>>Revising Design</option>
+            <option value="3" <?php selected($_GET['order_status'] ?? '', '3'); ?>>Completed</option>
+        </select>
+        <?php
     }
 });
 
@@ -210,7 +233,7 @@ add_action('pre_get_posts', function ($query) {
         $query->is_main_query() &&
         $query->get('post_type') === 'tiktok_order'
     ) {
-        // Lọc theo ngày nếu có
+        // Lọc theo ngày
         if (!empty($_GET['filter_by_date'])) {
             $filter_date = sanitize_text_field($_GET['filter_by_date']);
             $start = date('Y-m-d 00:00:00', strtotime($filter_date));
@@ -225,11 +248,22 @@ add_action('pre_get_posts', function ($query) {
             ]);
         }
 
+        // Lọc theo status nếu có
+        if (!empty($_GET['order_status'])) {
+            $meta_query = $query->get('meta_query') ?: [];
+            $meta_query[] = [
+                'key' => 'status',
+                'value' => intval($_GET['order_status']),
+                'compare' => '=',
+            ];
+            $query->set('meta_query', $meta_query);
+        }
+
+        // Sắp xếp mặc định
         $query->set('orderby', 'date');
         $query->set('order', 'DESC');
     }
 });
-
 
 // custom order list end
 
@@ -313,17 +347,15 @@ add_action('comment_post', function ($comment_id, $approved) {
 
     // Nếu là designer → gửi tới seller
     if (in_array('designer', $roles)) {
-        $sellers = get_users(['role' => 'seller']);
-        foreach ($sellers as $seller) {
-            create_notification(
-                $seller->ID,
-                'New Comment from ' . $author_name,
-                $author_name . ' commented on order #' . get_the_title($post_id),
-                'comment',
-                $post_id,
-                $comment_id
-            );
-        }
+        $seller_id = get_post_meta($post_id, 'seller_id', true);
+        create_notification(
+            $seller_id,
+            'New Comment from ' . $author_name,
+            $author_name . ' commented on order #' . get_the_title($post_id),
+            'comment',
+            $post_id,
+            $comment_id
+        );
     }
 
     if (in_array('seller', $roles) || in_array('manager', $roles)) {
@@ -405,16 +437,21 @@ add_action('wp_dashboard_setup', function () {
         );
     }
     if (in_array('seller', (array) $user->roles)) {
-        wp_add_dashboard_widget('tiktok_order_summary_widget', "📅 Order Summary", 'render_tiktok_order_today_summary_widget');
+        wp_add_dashboard_widget('tiktok_order_summary_widget', "📅 Today's Summary", 'render_tiktok_order_today_summary_widget');
+        wp_add_dashboard_widget('tiktok_order_month_summary', '📊 Monthly Summary', 'render_tiktok_order_month_summary_widget');
         wp_add_dashboard_widget('widget_total_orders', '📦 Total Orders', 'render_widget_total_orders_month');
         wp_add_dashboard_widget('widget_revising_orders', '✏️ Revising Orders', 'render_widget_revising_orders');
         wp_add_dashboard_widget('widget_completed_orders', '✅ Completed Orders', 'render_widget_completed_orders');
         wp_add_dashboard_widget('widget_revenue', '💰 Revenue', 'render_widget_revenue');
     };
     if (in_array('manager', (array) $user->roles)) {
+        wp_add_dashboard_widget('tiktok_order_month_summary', '📊 Monthly Summary', 'render_tiktok_order_month_summary_widget');
+        wp_add_dashboard_widget('widget_total_orders', '📦 Total Orders', 'render_widget_total_orders_month');
+        wp_add_dashboard_widget('widget_revenue', '💰 Revenue', 'render_widget_revenue');
+
         wp_add_dashboard_widget(
             'manager_dashboard_widget',
-            '📈 Manager Dashboard – Seller Revenue',
+            '📈 Manager Seller',
             'render_manager_dashboard_widget'
         );
         wp_add_dashboard_widget(
