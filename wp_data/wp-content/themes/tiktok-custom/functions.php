@@ -435,6 +435,8 @@ add_action('wp_dashboard_setup', function () {
             '📊 TikTok Order Dashboard',
             'render_tiktok_order_summary_widget'
         );
+        wp_add_dashboard_widget('widget_revising_orders', '✏️ Revising Orders', 'render_widget_revising_orders');
+        wp_add_dashboard_widget('widget_completed_orders', '✅ Completed Orders', 'render_widget_completed_orders');
     }
     if (in_array('seller', (array) $user->roles)) {
         wp_add_dashboard_widget('tiktok_order_summary_widget', "📅 Today's Summary", 'render_tiktok_order_today_summary_widget');
@@ -465,4 +467,51 @@ add_action('wp_dashboard_setup', function () {
             'manager_render_chart_order_count'
         );
     }
+});
+
+add_filter('acf/prepare_field', function ($field) {
+    $user = wp_get_current_user();
+
+    // Chỉ áp dụng logic nếu là role 'designer'
+    if (!in_array('designer', $user->roles)) {
+        return $field;
+    }
+
+    // Danh sách field được phép chỉnh sửa (theo field KEY)
+    $allowed_keys = [
+        'field_681273554b8ba',
+        'field_681274f6c28d5',
+    ];
+
+    // Nếu field không nằm trong danh sách → disable
+    if (!in_array($field['key'], $allowed_keys)) {
+        $field['disabled'] = true;
+    }
+
+    return $field;
+});
+
+
+add_action('admin_footer-post.php', function () {
+    $user = wp_get_current_user();
+    if (!in_array('designer', $user->roles)) return;
+    ?>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('input, textarea, select').forEach(el => {
+            const name = el.getAttribute('name') || '';
+
+            const isACF = name.startsWith('acf[');
+            const type = el.type;
+
+            if (!isACF && type !== 'submit' && type !== 'hidden' && type !== 'button') {
+                el.disabled = true;
+            }
+        });
+
+        const title = document.getElementById('title');
+        if (title) title.disabled = true;
+    });
+</script>
+    <?php
 });
