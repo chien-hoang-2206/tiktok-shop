@@ -515,3 +515,14 @@ add_action('admin_footer-post.php', function () {
 </script>
     <?php
 });
+
+
+function enqueue_custom_admin_styles($hook) {
+    wp_enqueue_style(
+        'custom-admin-style',
+        get_stylesheet_directory_uri() . '/assets/css/admin-style.css',
+        [],
+        '1.0'
+    );
+}
+add_action('admin_enqueue_scripts', 'enqueue_custom_admin_styles');
