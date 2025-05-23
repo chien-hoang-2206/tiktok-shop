@@ -152,8 +152,7 @@ function create_tiktok_order_post($order, $shop_id, $seller_id)
     $designer_id = find_designer_with_fewest_orders();
 
     // Tính deadline (sau 2 ngày kể từ hôm nay)
-    $deadline = date('d/m/Y', strtotime('+2 days', current_time('timestamp')));
-
+    $deadline = date('Ymd', strtotime('+2 days', current_time('timestamp')));
     // Tạo bài viết
     $post_id = wp_insert_post([
         'post_type' => 'tiktok_order',
