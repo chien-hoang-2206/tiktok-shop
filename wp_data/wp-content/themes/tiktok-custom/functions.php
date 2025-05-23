@@ -1,5 +1,4 @@
 <?php
-date_default_timezone_set('Asia/Ho_Chi_Minh');
 
 require_once get_template_directory() . '/includes/tiktok-api.php';
 require_once get_template_directory() . '/handle/functions.php';
@@ -147,8 +146,27 @@ add_action('manage_tiktok_order_posts_custom_column', function ($column, $post_i
 
         case 'deadline':
             $deadline = get_post_meta($post_id, 'deadline', true);
-            $datetime = new DateTime($deadline);
-            echo $datetime->format('d-m-Y');
+            if (!$deadline) {
+                echo 'No deadline';
+                return;
+            }
+
+            $formats = ['Ymd'];
+            $datetime = null;
+
+            foreach ($formats as $format) {
+                $dt = DateTime::createFromFormat($format, $deadline);
+                if ($dt && $dt->format($format) === $deadline) {
+                    $datetime = $dt;
+                    break;
+                }
+            }
+
+            if ($datetime) {
+                echo $datetime->format('d-m-Y');
+            } else {
+                echo 'Invalid date format: ' . htmlspecialchars($deadline);
+            }
             break;
 
         case 'actions':
