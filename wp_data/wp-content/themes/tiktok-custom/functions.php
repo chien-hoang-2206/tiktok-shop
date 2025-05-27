@@ -489,52 +489,83 @@ add_action('wp_dashboard_setup', function () {
     }
 });
 
-add_filter('acf/prepare_field', function ($field) {
-    $user = wp_get_current_user();
-
-    // Chỉ áp dụng logic nếu là role 'designer'
-    if (!in_array('designer', $user->roles)) {
-        return $field;
-    }
-
-    // Danh sách field được phép chỉnh sửa (theo field KEY)
-    $allowed_keys = [
-        'field_681273554b8ba',
-        'field_681274f6c28d5',
-    ];
-
-    // Nếu field không nằm trong danh sách → disable
-    if (!in_array($field['key'], $allowed_keys)) {
-        $field['disabled'] = true;
-    }
-
-    return $field;
-});
-
-
 add_action('admin_footer-post.php', function () {
     $user = wp_get_current_user();
     if (!in_array('designer', $user->roles)) return;
+
+    $readonly_fields = [
+        '_post_meta[order_number]',
+        '_post_meta[order_notice]',
+        '_post_meta[shop_code]',
+        '_post_meta[total]',
+        '_post_meta[net_revenue]',
+        '_post_meta[customer_name]',
+        'acf[field_6812677e8a305]',
+    ];
     ?>
-<script>
+    <script>
     document.addEventListener('DOMContentLoaded', function () {
-        document.querySelectorAll('input, textarea, select').forEach(el => {
-            const name = el.getAttribute('name') || '';
+        const fieldNames = <?php echo json_encode($readonly_fields); ?>;
+        const maxAttempts = 20;
+        let attempts = 0;
 
-            const isACF = name.startsWith('acf[');
-            const type = el.type;
+        const lockFields = () => {
+            let allFound = true;
 
-            if (!isACF && type !== 'submit' && type !== 'hidden' && type !== 'button') {
-                el.disabled = true;
-            }
-        });
+            fieldNames.forEach(name => {
+                const input = document.querySelector(`[name="${name}"]`);
+                if (input && !input.readOnly) {
+                    input.readOnly = true;
+                    input.style.backgroundColor = '#f9f9f9';
+                    input.title = 'Chỉ admin có thể sửa';
+                }
+                if (!input) allFound = false;
+            });
 
-        const title = document.getElementById('title');
-        if (title) title.disabled = true;
+            if (++attempts >= maxAttempts || allFound) clearInterval(timer);
+        };
+
+        const timer = setInterval(lockFields, 300);
     });
-</script>
+    </script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+    const selectIds = [
+        'acf-field_681871d83bd20',
+        'acf-field_6812677e8a305',
+    ];
+
+    selectIds.forEach(id => {
+        const select = document.getElementById(id);
+        if (select) {
+        // Tạo input hidden để giữ giá trị
+        const hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        hidden.name = select.name;
+        hidden.value = select.value;
+
+        // Thêm hidden trước select
+        select.parentNode.insertBefore(hidden, select);
+
+        // Vô hiệu hóa select
+        select.disabled = true;
+        select.title = 'Chỉ admin có thể sửa';
+
+        // Optional: Làm mờ giao diện Select2 nếu có
+        const wrapper = select.closest('.acf-input');
+        if (wrapper) {
+            wrapper.style.pointerEvents = 'none';
+            wrapper.style.opacity = 0.7;
+        }
+        }
+    });
+
+    });
+    </script>
     <?php
 });
+
 
 function enqueue_custom_admin_styles($hook) {
     wp_enqueue_style(
