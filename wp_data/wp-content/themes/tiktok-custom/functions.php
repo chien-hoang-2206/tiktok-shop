@@ -95,6 +95,7 @@ add_action('manage_tiktok_order_posts_custom_column', function ($column, $post_i
             $status_map = [
                 '1' => ['label' => 'Waiting for Design', 'color' => '#6c757d'],
                 '2' => ['label' => 'Revising Design', 'color' => '#fd7e14'],
+                '4' => ['label' => 'Pending', 'color' => '#FF9F00'],
                 '3' => ['label' => 'Completed', 'color' => '#28a745'],
             ];
 
@@ -239,6 +240,7 @@ add_action('restrict_manage_posts', function () {
             <option value="">All Status</option>
             <option value="1" <?php selected($_GET['order_status'] ?? '', '1'); ?>>Waiting for Design</option>
             <option value="2" <?php selected($_GET['order_status'] ?? '', '2'); ?>>Revising Design</option>
+            <option value="4" <?php selected($_GET['order_status'] ?? '', '3'); ?>>Pending</option>
             <option value="3" <?php selected($_GET['order_status'] ?? '', '3'); ?>>Completed</option>
         </select>
         <?php

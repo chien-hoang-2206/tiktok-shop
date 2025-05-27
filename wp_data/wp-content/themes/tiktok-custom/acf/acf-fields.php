@@ -182,6 +182,7 @@ add_action('acf/include_fields', function () {
                 'choices' => array(
                     1 => 'Waiting for Design',
                     2 => 'Revising Design',
+                    4 => 'Pending',
                     3 => 'Completed',
                 ),
                 'default_value' => 1,
