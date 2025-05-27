@@ -56,7 +56,7 @@ function sync_tiktok_orders()
     $seller_id = $config['seller_id'];
     $version = $config['version'];
     $timestamp = time();
-    $page_size = 10;
+    $page_size = 100;
 
     $path = '/order/202309/orders/search';
     $params = [
