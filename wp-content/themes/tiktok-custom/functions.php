@@ -455,14 +455,14 @@ add_action('wp_dashboard_setup', function () {
             '📊 TikTok Order Dashboard',
             'render_tiktok_order_summary_widget'
         );
-        wp_add_dashboard_widget('widget_revising_orders', '✏️ Revising Orders', 'render_widget_revising_orders');
+        wp_add_dashboard_widget('widget_waiting_for_design', '✏️ Waiting for design', 'render_widget_waiting_for_design');
         wp_add_dashboard_widget('widget_completed_orders', '✅ Completed Orders', 'render_widget_completed_orders');
     }
     if (in_array('seller', (array) $user->roles)) {
         wp_add_dashboard_widget('tiktok_order_summary_widget', "📅 Today's Summary", 'render_tiktok_order_today_summary_widget');
         wp_add_dashboard_widget('tiktok_order_month_summary', '📊 Monthly Summary', 'render_tiktok_order_month_summary_widget');
         wp_add_dashboard_widget('widget_total_orders', '📦 Total Orders', 'render_widget_total_orders_month');
-        wp_add_dashboard_widget('widget_revising_orders', '✏️ Revising Orders', 'render_widget_revising_orders');
+        wp_add_dashboard_widget('widget_waiting_for_design', '✏️ Waiting for design', 'render_widget_waiting_for_design');
         wp_add_dashboard_widget('widget_completed_orders', '✅ Completed Orders', 'render_widget_completed_orders');
         wp_add_dashboard_widget('widget_revenue', '💰 Revenue', 'render_widget_revenue');
     };

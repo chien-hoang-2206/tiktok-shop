@@ -250,6 +250,13 @@ function render_widget_completed_orders()
     render_chart_widget('chart_completed_orders', 'Completed Orders This Month', $data['data'], '#28a745', $data['labels']);
 }
 
+function render_widget_waiting_for_design()
+{
+    $data = get_order_stats_by_month('1', false); // status = 2
+    render_chart_widget('chart_revising_orders', 'Revising Orders This Month', $data['data'], '#fd7e14', $data['labels']);
+}
+
+
 function render_widget_revising_orders()
 {
     $data = get_order_stats_by_month('2', false); // status = 2
@@ -299,6 +306,14 @@ function get_order_stats_by_month($status_filter = null, $return_revenue = false
         if (in_array('seller', (array) $user->roles)) {
             $query_args['meta_query'][] = [
                 'key' => 'seller_id',
+                'value' => $user_id,
+                'compare' => '='
+            ];
+        }
+
+        if (in_array('designer', (array) $user->roles)) {
+            $query_args['meta_query'][] = [
+                'key' => 'designer',
                 'value' => $user_id,
                 'compare' => '='
             ];
